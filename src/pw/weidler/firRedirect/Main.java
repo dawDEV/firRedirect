@@ -16,14 +16,13 @@ import pw.weidler.firRedirect.logging.Logger.LogLevel;
 
 public class Main {
 	
+	private static Logger logger = Logger.getInstance();
+	
 	public static void main(String[] args) throws IOException {
-		Logger logger = Logger.getInstance();
-		//File f = new File(System.getProperty("user.dir")+dat.getYear()+"-"+dat.getMonth()+"-"+dat.getDay()+"_"+dat.getHours()+"-"+dat.getMinutes()+"-"+dat.getSeconds()+"-"+dat.getTime()+".txt");
-
-		//f.createNewFile();
-
-		//PrintWriter pw = new PrintWriter(f);
-		
+		alarmSenden(alarmAuswerten(args));
+	}
+	
+	public static String alarmAuswerten(String[] args){
 		StringBuilder sbAufrufparameter = new StringBuilder();
 
 		for (String arg : args) {
@@ -34,12 +33,16 @@ public class Main {
 
 		String kodierung = params[0].trim().replace(System.getProperty("line.separator"), "%5Cn");
 		String beschreibung = params[1].trim().replace(System.getProperty("line.separator"), "%5Cn");
-		String alarmtext = params[2].trim().replace(System.getProperty("line.separator"), "%5Cn");		
+		String alarmtext = params[2].trim().replace(System.getProperty("line.separator"), "%5Cn");
 		AlarmDTO alarm = new AlarmDTO(alarmtext, "ALARM", "firRedirect", System.currentTimeMillis()+"", new AlarmDataDTO(kodierung, alarmtext, beschreibung));
 		
 		Gson gson = new GsonBuilder().create();
 		String json = gson.toJson(alarm);
 		
+		return json;
+	}
+
+	public static void alarmSenden(String alarmData){
 		try {
 			Socket socket = new Socket(ConfigReader.getInstance().getConfig().getFirEmergencyIP(),
 									   ConfigReader.getInstance().getConfig().getFirEmergencyPort());
@@ -48,9 +51,9 @@ public class Main {
 			OutputStream os = socket.getOutputStream();
 			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
 			
-			bw.write(json);
+			bw.write(alarmData);
 			bw.flush();
-			logger.log(LogLevel.INFO, String.format("Daten an firEmergency übertragen. DATA=%s", json)); 
+			logger.log(LogLevel.INFO, String.format("Daten an firEmergency übertragen. DATA=%s", alarmData)); 
 			
 			bw.close();
 			os.close();
@@ -65,5 +68,4 @@ public class Main {
 		} catch (InterruptedException e) {
 		}
 	}
-
 }
