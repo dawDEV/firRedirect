@@ -11,16 +11,19 @@ import com.google.gson.GsonBuilder;
 
 import pw.weidler.firRedirect.dto.AlarmDTO;
 import pw.weidler.firRedirect.dto.AlarmDataDTO;
+import pw.weidler.firRedirect.logging.Logger;
+import pw.weidler.firRedirect.logging.Logger.LogLevel;
 
 public class Main {
-
+	
 	public static void main(String[] args) throws IOException {
+		Logger logger = Logger.getInstance();
 		//File f = new File(System.getProperty("user.dir")+dat.getYear()+"-"+dat.getMonth()+"-"+dat.getDay()+"_"+dat.getHours()+"-"+dat.getMinutes()+"-"+dat.getSeconds()+"-"+dat.getTime()+".txt");
 
 		//f.createNewFile();
 
 		//PrintWriter pw = new PrintWriter(f);
-
+		
 		StringBuilder sbAufrufparameter = new StringBuilder();
 
 		for (String arg : args) {
@@ -36,29 +39,29 @@ public class Main {
 		
 		Gson gson = new GsonBuilder().create();
 		String json = gson.toJson(alarm);
-
-		System.out.println(json);
-		//pw.println(json);
-		//pw.flush();
-		//pw.close();
 		
 		try {
-			Socket socket = new Socket("localhost", 5566);
+			Socket socket = new Socket(ConfigReader.getInstance().getConfig().getFirEmergencyIP(),
+									   ConfigReader.getInstance().getConfig().getFirEmergencyPort());
+			logger.log(LogLevel.DEBUG, String.format("Socket zu %s:%d geöffnet!", ConfigReader.getInstance().getConfig().getFirEmergencyIP(),
+									   											  ConfigReader.getInstance().getConfig().getFirEmergencyPort()));
 			OutputStream os = socket.getOutputStream();
 			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
 			
 			bw.write(json);
 			bw.flush();
+			logger.log(LogLevel.INFO, String.format("Daten an firEmergency übertragen. DATA=%s", json)); 
 			
 			bw.close();
 			os.close();
 			socket.close();
+			logger.log(LogLevel.DEBUG, "Socket geschlossen");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(300);
 		} catch (InterruptedException e) {
 		}
 	}
